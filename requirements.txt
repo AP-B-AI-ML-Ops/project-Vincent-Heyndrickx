@@ -1,0 +1,10 @@
+pandas
+scikit-learn
+joblib
+fastapi
+uvicorn
+mlflow
+prefect
+pydantic
+prometheus_client
+evidently
