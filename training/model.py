@@ -19,6 +19,7 @@ def train_model(file_path="data/SPX.csv", alpha=1.0):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment("sp500_regression")
 
     with mlflow.start_run():
