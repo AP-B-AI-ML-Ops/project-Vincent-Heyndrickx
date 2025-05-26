@@ -1,15 +1,13 @@
 services:
   web-api:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ./web_api
     ports:
       - "8000:8000"
     depends_on:
       - mlflow
-      - prometheus
     volumes:
-      - ./model.pkl:/app/model.pkl
+      - mlflow-artifacts:/runs
 
   mlflow:
     build:
