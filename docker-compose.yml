@@ -80,21 +80,15 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   prefect-server:
-    image: prefecthq/server:latest
-    environment:
-      PREFECT_API_DATABASE_CONNECTION_URL: postgresql://postgres:password@postgres:5432/postgres
+    build:
+      context: ./prefect
     ports:
       - "4200:4200"
-    depends_on:
-      - postgres
-
-  prefect-agent:
-    image: prefecthq/prefect:2-latest
-    command: prefect agent start --work-queue "default"
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
-    depends_on:
-      - prefect-server
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://postgres:password@backend-database:5432/prefect_db
+      
+
+
 
 volumes:
   mongo_data:
