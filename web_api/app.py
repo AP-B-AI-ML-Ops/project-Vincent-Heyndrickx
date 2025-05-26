@@ -1,28 +1,45 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-import joblib
-import numpy as np
+import pickle
+import pandas as pd
+from flask import Flask, request, jsonify, Response
+from mlflow.tracking import MlflowClient
+import mlflow
 from prometheus_client import Counter, generate_latest
-from fastapi.responses import Response
 
-app = FastAPI()
-model = joblib.load('model.joblib')
-prediction_counter = Counter("stock_predictions", "Number of stock predictions made")
+app = Flask("s&p500-api")
 
-class StockInput(BaseModel):
-    Open: float
-    High: float
-    Low: float
-    Close: float
-    Volume: float
+mlflow.set_tracking_uri("http://mlflow:5000")
+client = MlflowClient("http://mlflow:5000")
 
-@app.post("/predict")
-def predict_stock(input: StockInput):
-    features = np.array([[input.Open, input.High, input.Low, input.Close, input.Volume]])
-    prediction = model.predict(features)[0]
-    prediction_counter.inc()
-    return {"predicted_return": prediction}
+REGISTERED_MODEL_NAME = "sp500_regression"
 
-@app.get("/metrics")
+prediction_counter = Counter("stock_predictions_total", "Aantal stock predicties")
+
+def load_vectorizer():
+    with open("dv.pkl", "rb") as f:
+        return pickle.load(f)
+
+def load_latest_model():
+    latest_version = client.get_latest_versions(REGISTERED_MODEL_NAME, stages=["None"])[0]
+    return mlflow.pyfunc.load_model(latest_version.source)
+
+dv = load_vectorizer()
+model = load_latest_model()
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        input_data = request.get_json()
+        df = pd.DataFrame([input_data])
+        transformed = dv.transform(df.to_dict(orient="records"))
+        prediction = model.predict(transformed)[0]
+        prediction_counter.inc()
+        return jsonify({"predicted_return": float(prediction)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/metrics")
 def metrics():
-    return Response(generate_latest(), media_type="text/plain")
+    return Response(generate_latest(), mimetype="text/plain")
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=8000)
