@@ -1,0 +1,9 @@
+mlflow==2.22.0
+pandas==2.2.3
+prefect==3.3.7
+sqlalchemy==2.0.40
+sqlalchemy-utils==0.41.2
+evidently==0.7.3
+psycopg==3.2.7
+psycopg-binary==3.2.7
+scikit-learn==1.6.1
